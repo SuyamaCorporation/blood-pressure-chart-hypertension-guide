@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blood Pressure Checker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen py-8 px-4">
+<div class="max-w-xl mx-auto">
+  <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Blood Pressure Checker</h1>
+  <p class="text-gray-500 text-center mb-8">AHA 2017 Classification Guidelines</p>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="grid grid-cols-2 gap-6">
+      <div>
+        <label for="systolic" class="block text-sm font-medium text-gray-700 mb-1">Systolic (mmHg)</label>
+        <input id="systolic" type="number" min="50" max="300" placeholder="e.g. 120"
+          class="w-full border border-gray-300 rounded-lg px-3 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+          oninput="classify()" aria-label="Systolic blood pressure in mmHg">
+        <p class="text-xs text-gray-400 text-center mt-1">Top number</p>
+      </div>
+      <div>
+        <label for="diastolic" class="block text-sm font-medium text-gray-700 mb-1">Diastolic (mmHg)</label>
+        <input id="diastolic" type="number" min="30" max="200" placeholder="e.g. 80"
+          class="w-full border border-gray-300 rounded-lg px-3 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+          oninput="classify()" aria-label="Diastolic blood pressure in mmHg">
+        <p class="text-xs text-gray-400 text-center mt-1">Bottom number</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-area" class="hidden">
+    <div id="result-badge" class="rounded-2xl p-6 text-center mb-6">
+      <div id="result-label" class="text-2xl font-bold mb-1"></div>
+      <div id="result-range" class="text-sm font-medium opacity-80"></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h2 class="text-base font-semibold text-gray-700 mb-3">Visual Gauge</h2>
+      <div class="relative h-6 rounded-full overflow-hidden flex">
+        <div class="flex-1 bg-green-400" title="Normal"></div>
+        <div class="flex-1 bg-yellow-300" title="Elevated"></div>
+        <div class="flex-1 bg-orange-400" title="High Stage 1"></div>
+        <div class="flex-1 bg-red-500" title="High Stage 2"></div>
+        <div class="flex-1 bg-red-800" title="Crisis"></div>
+      </div>
+      <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">
+        <span>Normal</span>
+        <span>Elevated</span>
+        <span>Stage 1</span>
+        <span>Stage 2</span>
+        <span>Crisis</span>
+      </div>
+      <div class="relative h-4 mt-2">
+        <div id="gauge-marker" class="absolute w-3 h-3 rounded-full bg-gray-800 border-2 border-white shadow transform -translate-x-1/2 top-0" style="left: 0%"></div>
+      </div>
+    </div>
+
+    <div id="result-desc" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-sm text-gray-600 leading-relaxed"></div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6">
+    <h2 class="text-base font-semibold text-gray-700 mb-3">AHA 2017 Reference Chart</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="text-left py-2 pr-4 font-semibold text-gray-500">Category</th>
+            <th class="text-left py-2 pr-4 font-semibold text-gray-500">Systolic</th>
+            <th class="text-left py-2 font-semibold text-gray-500">Diastolic</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr><td class="py-2 pr-4"><span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-2"></span>Normal</td><td class="pr-4">&lt; 120</td><td>&lt; 80</td></tr>
+          <tr><td class="py-2 pr-4"><span class="inline-block w-2 h-2 rounded-full bg-yellow-300 mr-2"></span>Elevated</td><td class="pr-4">120–129</td><td>&lt; 80</td></tr>
+          <tr><td class="py-2 pr-4"><span class="inline-block w-2 h-2 rounded-full bg-orange-400 mr-2"></span>High Stage 1</td><td class="pr-4">130–139</td><td>80–89</td></tr>
+          <tr><td class="py-2 pr-4"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>High Stage 2</td><td class="pr-4">&ge; 140</td><td>&ge; 90</td></tr>
+          <tr><td class="py-2 pr-4"><span class="inline-block w-2 h-2 rounded-full bg-red-800 mr-2"></span>Hypertensive Crisis</td><td class="pr-4">&gt; 180</td><td>&gt; 120</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-400 text-center mt-6">This tool is for informational purposes only. Consult a healthcare provider for medical advice.</p>
+</div>
+
+<script>
+const categories = [
+  {
+    label: 'Normal',
+    range: 'Systolic < 120 AND Diastolic < 80',
+    badgeClass: 'bg-green-100 text-green-800',
+    gaugePos: 10,
+    desc: 'Your blood pressure is in the healthy range. Maintain a balanced diet, regular exercise, and avoid smoking to keep it this way. A blood pressure below 120/80 mmHg is considered optimal for cardiovascular health.'
+  },
+  {
+    label: 'Elevated',
+    range: 'Systolic 120–129 AND Diastolic < 80',
+    badgeClass: 'bg-yellow-100 text-yellow-800',
+    gaugePos: 30,
+    desc: 'Your blood pressure is slightly above normal. Without lifestyle changes, elevated blood pressure is likely to progress to high blood pressure. Consider reducing sodium intake, increasing physical activity, and limiting alcohol.'
+  },
+  {
+    label: 'High Blood Pressure Stage 1',
+    range: 'Systolic 130–139 OR Diastolic 80–89',
+    badgeClass: 'bg-orange-100 text-orange-800',
+    gaugePos: 50,
+    desc: 'Stage 1 hypertension. Your doctor will likely recommend lifestyle changes and may consider medication based on your cardiovascular risk. Monitor your blood pressure regularly. Reduce stress, sodium, and processed foods.'
+  },
+  {
+    label: 'High Blood Pressure Stage 2',
+    range: 'Systolic ≥ 140 OR Diastolic ≥ 90',
+    badgeClass: 'bg-red-100 text-red-800',
+    gaugePos: 70,
+    desc: 'Stage 2 hypertension. At this stage, a combination of blood pressure medications and lifestyle changes is typically prescribed. Consult your healthcare provider promptly. Untreated hypertension significantly raises the risk of heart attack and stroke.'
+  },
+  {
+    label: 'Hypertensive Crisis',
+    range: 'Systolic > 180 AND/OR Diastolic > 120',
+    badgeClass: 'bg-red-900 text-red-100',
+    gaugePos: 90,
+    desc: 'This is a hypertensive crisis requiring immediate medical attention. Seek emergency care right away. You may be experiencing or at risk of organ damage. Do not drive yourself — call emergency services immediately.'
+  }
+];
+
+function classify() {
+  const sys = parseFloat(document.getElementById('systolic').value);
+  const dia = parseFloat(document.getElementById('diastolic').value);
+
+  if (isNaN(sys) || isNaN(dia) || sys <= 0 || dia <= 0) {
+    document.getElementById('result-area').classList.add('hidden');
+    return;
+  }
+
+  let cat;
+  if (sys > 180 || dia > 120) {
+    cat = categories[4];
+  } else if (sys >= 140 || dia >= 90) {
+    cat = categories[3];
+  } else if (sys >= 130 || dia >= 80) {
+    cat = categories[2];
+  } else if (sys >= 120 && dia < 80) {
+    cat = categories[1];
+  } else {
+    cat = categories[0];
+  }
+
+  document.getElementById('result-area').classList.remove('hidden');
+  const badge = document.getElementById('result-badge');
+  badge.className = 'rounded-2xl p-6 text-center mb-6 ' + cat.badgeClass;
+  document.getElementById('result-label').textContent = cat.label;
+  document.getElementById('result-range').textContent = cat.range;
+  document.getElementById('result-desc').textContent = cat.desc;
+  document.getElementById('gauge-marker').style.left = cat.gaugePos + '%';
+}
+</script>
+</body>
+</html>
